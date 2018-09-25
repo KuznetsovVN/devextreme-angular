@@ -1,32 +1,30 @@
-import { EventEmitter, NgZone, Injectable } from '@angular/core';
+import { EventEmitter, NgZone } from '@angular/core';
 import { DxComponent } from './component';
-import * as eventsEngine from 'devextreme/events/core/events_engine';
-
-const dxToNgEventNames = {};
 
 interface IEventSubscription {
     handler: any;
     unsubscribe: () => void;
 }
-
 export class NgEventsStrategy {
     private subscriptions: { [key: string]: IEventSubscription[] } = {};
+    private events: { [key: string]: EventEmitter<any> } = {};
 
-    constructor(private component: DxComponent, private ngZone: NgZone) { }
+    constructor(private instance: any) { }
 
     hasEvent(name: string) {
         return this.getEmitter(name).observers.length;
     }
 
     fireEvent(name, args) {
-        this.ngZone.run(() => {
-            this.getEmitter(name).next(args && args[0]);
-        });
+        let emitter = this.getEmitter(name);
+        if (emitter.observers.length) {
+            emitter.next(args && args[0]);
+        }
     }
 
     on(name, handler) {
         let eventSubscriptions = this.subscriptions[name] || [],
-            subcription = this.getEmitter(name).subscribe(handler.bind(this.component.instance)),
+            subcription = this.getEmitter(name).subscribe(handler.bind(this.instance)),
             unsubscribe = subcription.unsubscribe.bind(subcription);
 
         eventSubscriptions.push({ handler, unsubscribe });
@@ -54,77 +52,39 @@ export class NgEventsStrategy {
 
     dispose() {}
 
+    public addEmitter(eventName: string, emitter: EventEmitter<any>) {
+        this.events[eventName] = emitter;
+    }
+
     private getEmitter(eventName: string): EventEmitter<any> {
-        let ngEventName = dxToNgEventNames[eventName];
-        if (!this.component[ngEventName]) {
-            this.component[ngEventName] = new EventEmitter();
+        if (!this.events[eventName]) {
+            this.events[eventName] = new EventEmitter();
         }
-        return this.component[ngEventName];
+        return this.events[eventName];
     }
 }
-
-interface IRememberedEvent {
-    name: string;
-    context: EmitterHelper;
-}
-
-let events: IRememberedEvent[] = [];
-let onStableSubscription: IEventSubscription = null;
-
-let createOnStableSubscription = function(ngZone: NgZone, fireNgEvent: Function) {
-    if (onStableSubscription) {
-        return;
-    }
-
-    onStableSubscription = ngZone.onStable.subscribe(function() {
-        onStableSubscription.unsubscribe();
-        onStableSubscription = null;
-
-        ngZone.run(() => {
-            events.forEach(event => {
-                let value = event.context.component[event.name];
-
-                fireNgEvent.call(event.context, event.name + 'Change', [value]);
-            });
-        });
-
-        events = [];
-    });
-};
 
 export class EmitterHelper {
-    strategy: NgEventsStrategy;
+    lockedValueChangeEvent = false;
 
-    constructor(ngZone: NgZone, public component: DxComponent) {
-        this.strategy = new NgEventsStrategy(component, ngZone);
-        createOnStableSubscription(ngZone, this.fireNgEvent);
-    }
+    constructor(private zone: NgZone, private component: DxComponent) { }
+
     fireNgEvent(eventName: string, eventArgs: any) {
+        if (this.lockedValueChangeEvent && eventName === 'valueChange') {
+            return;
+        }
         let emitter = this.component[eventName];
-        if (emitter) {
-            emitter.next(eventArgs && eventArgs[0]);
+        if (emitter && emitter.observers.length) {
+            this.zone.run(() => {
+                emitter.next(eventArgs && eventArgs[0]);
+            });
         }
     }
-    createEmitter(ngEventName: string, dxEventName: string) {
-        this.component[ngEventName] = new EventEmitter();
-        if (dxEventName) {
-            dxToNgEventNames[dxEventName] = ngEventName;
-        }
-    }
-    rememberEvent(name: string) {
-        events.push({ name: name, context: this });
-    }
-}
 
-@Injectable()
-export class EventsRegistrator {
-    constructor(ngZone: NgZone) {
-        eventsEngine.set({
-            on: function(...args) {
-                ngZone.runOutsideAngular(() => {
-                    this.callBase.apply(this, args);
-                });
-            }
+    createEmitters(events: any[]) {
+        events.forEach(event => {
+            this.component[event.emit] = new EventEmitter();
         });
     }
 }
+

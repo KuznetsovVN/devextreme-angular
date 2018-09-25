@@ -4,17 +4,20 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    ViewChildren,
+    ViewChild,
     NgZone,
     Input,
     Output,
-    QueryList,
-    AfterViewInit
+    AfterViewInit,
+    PLATFORM_ID,
+    Inject
 } from '@angular/core';
 
+import { TransferState } from '@angular/platform-browser';
+import { BrowserTransferStateModule } from '@angular/platform-browser';
+
 import {
-    TestBed,
-    async
+    TestBed
 } from '@angular/core/testing';
 
 import {
@@ -38,7 +41,7 @@ let DxTestWidget = DxButton['inherit']({
     template: '',
     providers: [DxTemplateHost, WatcherHelper]
 })
-export class DxTestWidgetComponent extends DxComponent implements AfterViewInit {
+export class DxTestWidgetComponent extends DxComponent {
     @Input()
     get testTemplate(): any {
         return this._getOption('testTemplate');
@@ -50,8 +53,13 @@ export class DxTestWidgetComponent extends DxComponent implements AfterViewInit 
     @Output() onOptionChanged = new EventEmitter<any>();
     @Output() testTemplateChange = new EventEmitter<any>();
 
-    constructor(elementRef: ElementRef, ngZone: NgZone, templateHost: DxTemplateHost, _watcherHelper: WatcherHelper) {
-        super(elementRef, ngZone, templateHost, _watcherHelper);
+    constructor(elementRef: ElementRef,
+        ngZone: NgZone,
+        templateHost: DxTemplateHost,
+        _watcherHelper: WatcherHelper,
+        transferState: TransferState,
+        @Inject(PLATFORM_ID) platformId: any) {
+        super(elementRef, ngZone, templateHost, _watcherHelper, transferState, platformId);
 
         this._createEventEmitters([
             { subscribe: 'optionChanged', emit: 'onOptionChanged' },
@@ -61,10 +69,6 @@ export class DxTestWidgetComponent extends DxComponent implements AfterViewInit 
 
     protected _createInstance(element, options) {
         return new DxTestWidget(element, options);
-    }
-
-    ngAfterViewInit() {
-        this._createWidget(this.element.nativeElement);
     }
 }
 
@@ -76,11 +80,18 @@ export class DxTestWidgetComponent extends DxComponent implements AfterViewInit 
 export class DxTestComponent extends DxComponent implements AfterViewInit {
     templates: DxTemplateDirective[];
 
-    constructor(elementRef: ElementRef, ngZone: NgZone, templateHost: DxTemplateHost, _watcherHelper: WatcherHelper) {
-        super(elementRef, ngZone, templateHost, _watcherHelper);
+    constructor(elementRef: ElementRef,
+        ngZone: NgZone,
+        templateHost: DxTemplateHost,
+        _watcherHelper: WatcherHelper,
+        transferState: TransferState,
+        @Inject(PLATFORM_ID) platformId: any) {
+        super(elementRef, ngZone, templateHost, _watcherHelper, transferState, platformId);
     }
 
-    protected _createInstance() {}
+    protected _createInstance(element, options) {
+        return new DxTestWidget(element, options);
+    }
 
     ngAfterViewInit() {
         this.templates[0].render({
@@ -97,7 +108,13 @@ export class DxTestComponent extends DxComponent implements AfterViewInit {
     providers: [DxTemplateHost]
 })
 export class TestContainerComponent {
-    @ViewChildren(DxTestWidgetComponent) innerWidgets: QueryList<DxTestWidgetComponent>;
+    @ViewChild(DxTestWidgetComponent) widget: DxTestWidgetComponent;
+
+    @Output() onInnerElementClicked = new EventEmitter<any>();
+
+    testFunction() {
+        this.onInnerElementClicked.next();
+    }
 }
 
 
@@ -107,17 +124,12 @@ describe('DevExtreme Angular widget\'s template', () => {
         TestBed.configureTestingModule(
             {
                 declarations: [TestContainerComponent, DxTestWidgetComponent, DxTestComponent],
-                imports: [DxTemplateModule]
+                imports: [DxTemplateModule, BrowserTransferStateModule]
             });
     });
 
-    function getWidget(fixture) {
-        let widgetElement = fixture.nativeElement.querySelector('.dx-test-widget') || fixture.nativeElement;
-        return DxTestWidget.getInstance(widgetElement);
-    }
-
     // spec
-    it('should initialize named templates #17', async(() => {
+    it('should initialize named templates #17', () => {
         TestBed.overrideComponent(TestContainerComponent, {
             set: {
                 template: `
@@ -129,16 +141,16 @@ describe('DevExtreme Angular widget\'s template', () => {
         let fixture = TestBed.createComponent(TestContainerComponent);
         fixture.detectChanges();
 
-        let instance = getWidget(fixture),
+        let instance = fixture.componentInstance.widget.instance,
             templatesHash = instance.option('integrationOptions.templates');
 
         expect(templatesHash['templateName']).not.toBeUndefined();
         expect(typeof templatesHash['templateName'].render).toBe('function');
 
-    }));
+    });
 
 
-    it('should add template wrapper class as template has root container', async(() => {
+    it('should add template wrapper class as template has root container', () => {
         TestBed.overrideComponent(TestContainerComponent, {
             set: {
                 template: `
@@ -151,7 +163,7 @@ describe('DevExtreme Angular widget\'s template', () => {
         fixture.detectChanges();
 
         let testComponent = fixture.componentInstance,
-            innerComponent = testComponent.innerWidgets.first,
+            innerComponent = testComponent.widget,
             templatesHash = innerComponent.instance.option('integrationOptions.templates'),
             template = innerComponent.testTemplate,
             container = document.createElement('div');
@@ -163,10 +175,9 @@ describe('DevExtreme Angular widget\'s template', () => {
 
         expect(container.children[0].classList.contains('dx-template-wrapper')).toBe(true);
 
-    }));
+    });
 
-
-    it('should have item index', async(() => {
+    it('should have item index', () => {
         TestBed.overrideComponent(TestContainerComponent, {
             set: {
                 template: `
@@ -180,7 +191,7 @@ describe('DevExtreme Angular widget\'s template', () => {
 
         let element = fixture.nativeElement.querySelector('div');
         expect(element.textContent).toBe('index: 5');
-    }));
+    });
 
 });
 

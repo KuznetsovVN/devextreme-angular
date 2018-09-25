@@ -4,7 +4,7 @@ describe("metadata-generator", function() {
     var path = require('path');
     var Generator = require('../../dist/metadata-generator').default;
 
-    const TYPES_SEPORATOR = '|\n        ';
+    const TYPES_SEPORATOR = ' | ';
 
     var testConfig = {
         sourceMetadataFilePath: "source-path",
@@ -318,26 +318,56 @@ describe("metadata-generator", function() {
                                 Options: {
                                     nested: { // DxoNested
                                         Options: {
-                                            deep: {}
+                                            deep: {},
+                                            changeable: {
+                                                IsChangeable: true
+                                            },
+                                            readonly: {
+                                                IsReadonly: true
+                                            }
                                         }
                                     },
                                     nestedItems: { // DxiNestedItem
                                         Options: {
-                                            deep: {}
+                                            deep: {},
+                                            changeable: {
+                                                IsChangeable: true
+                                            },
+                                            readonly: {
+                                                IsReadonly: true
+                                            }
                                         },
                                         IsCollection: true,
                                         SingularName: "nestedItem"
+                                    },
+                                    changeable: {
+                                        IsChangeable: true
+                                    },
+                                    readonly: {
+                                        IsReadonly: true
                                     }
                                 }
                             },
                             collectionItem: { // DxoItem
                                 Options: {
-                                    nested: {}
+                                    nested: {},
+                                    changeable: {
+                                        IsChangeable: true
+                                    },
+                                    readonly: {
+                                        IsReadonly: true
+                                    }
                                 }
                             },
                             collectionItems: { // DxiItem
                                 Options: {
-                                    nested: {}
+                                    nested: {},
+                                    changeable: {
+                                        IsChangeable: true
+                                    },
+                                    readonly: {
+                                        IsReadonly: true
+                                    }
                                 },
                                 IsCollection: true,
                                 SingularName: "collectionItem"
@@ -447,7 +477,7 @@ describe("metadata-generator", function() {
             expect(metas.DxComplexWidget.nestedComponents.map(c => c.className)).toContain('DxoProperty');
             expect(metas.DxAnotherComplexWidget.nestedComponents.map(c => c.className)).toContain('DxoProperty');
 
-            expect(metas.DxoProperty.properties.map(p => p.name)).toEqual(['nested', 'nestedItems', 'anotherNested']);
+            expect(metas.DxoProperty.properties.map(p => p.name)).toEqual(['nested', 'nestedItems', 'changeable', 'readonly', 'anotherNested']);
             expect(metas.DxoProperty.optionName).toBe('property');
         });
 
@@ -474,11 +504,22 @@ describe("metadata-generator", function() {
             expect(metas.DxiExternalPropertyItem.basePath).toBe('./base/external-property-type-dxi');
         });
 
+        it("should generate proper events emit field of if nested components isChangeable=true or isReadonly=true", function() {
+            ['DxoProperty', 'DxoNested', 'DxiNestedItem', 'DxoCollectionItem', 'DxiCollectionItem'].forEach((component) => {
+                expect(metas[component].events
+                    .map(p => p.emit)).toEqual([
+                        'changeableChange',
+                        'readonlyChange'
+                    ]
+                );
+            });
+        });
+
         it("should generate deep nested components", function() {
             expect(metas.DxComplexWidget.nestedComponents.map(c => c.className)).toContain('DxoNested');
             expect(metas.DxAnotherComplexWidget.nestedComponents.map(c => c.className)).not.toContain('DxoNested');
 
-            expect(metas.DxoNested.properties.map(p => p.name)).toEqual(['deep']);
+            expect(metas.DxoNested.properties.map(p => p.name)).toEqual(['deep', 'changeable', 'readonly']);
             expect(metas.DxoNested.optionName).toBe('nested');
             expect(metas.DxoNested.baseClass).toBe('NestedOption');
             expect(metas.DxoNested.hasSimpleBaseClass).toBe(true);
@@ -582,7 +623,18 @@ describe("metadata-generator", function() {
                             },
                             property2: {
 
-                            }
+                            },
+                            property3: {
+                               Options: {
+                                   nestedProperty1: {
+                                       PrimitiveTypes: [ 'number' ]
+                                   },
+                                   nestedProperty2: {
+                                       PrimitiveTypes: [ 'string' ]
+                                   }
+                               }
+                           }
+
                         }
                     },
                     ExternalPropertyType2: {
@@ -604,6 +656,8 @@ describe("metadata-generator", function() {
                                 ]
                             },
                             property3: {
+                            },
+                            property4: {
                             }
                         }
                     }
@@ -612,7 +666,7 @@ describe("metadata-generator", function() {
         });
 
         it("should write generated data to a separate file for each widget", function() {
-            expect(store.write.calls.count()).toBe(4);
+            expect(store.write.calls.count()).toBe(5);
 
             let writeToPathCount = (path) => {
                 return store.write.calls
@@ -627,7 +681,7 @@ describe("metadata-generator", function() {
         });
 
         it("should generate matadata", function() {
-            expect(Object.keys(metas).length).toBe(4);
+            expect(Object.keys(metas).length).toBe(5);
 
             expect(metas.DxComplexWidget).not.toBe(undefined);
             expect(metas.DxoExternalProperty).not.toBe(undefined);
@@ -638,14 +692,14 @@ describe("metadata-generator", function() {
         it("should generate nested components with merged properties", function() {
             expect(metas.DxComplexWidget.nestedComponents.map(c => c.className)).toContain('DxoExternalProperty');
 
-            expect(metas.DxoExternalProperty.properties.map(p => p.name)).toEqual(['property', 'property1', 'property2', 'property3']);
+            expect(metas.DxoExternalProperty.properties.map(p => p.name)).toEqual(['property', 'property1', 'property2', 'property3', 'property4']);
             expect(metas.DxoExternalProperty.optionName).toBe('externalProperty');
         });
 
         it("should generate collection nested components with merged properties", function() {
             expect(metas.DxComplexWidget.nestedComponents.map(c => c.className)).toContain('DxiExternalPropertyItem');
 
-            expect(metas.DxiExternalPropertyItem.properties.map(p => p.name)).toEqual(['property', 'property1', 'property2', 'property3']);
+            expect(metas.DxiExternalPropertyItem.properties.map(p => p.name)).toEqual(['property', 'property1', 'property2', 'property3', 'property4']);
             expect(metas.DxiExternalPropertyItem.optionName).toBe('externalPropertyItems');
         });
 
@@ -666,6 +720,7 @@ describe("metadata-generator", function() {
                     '{ nestedProperty2?: string }',
                     'string', 
                     'any', 
+                    '{ nestedProperty1?: number, nestedProperty2?: string }',
                     'any'
                 ]);
         });

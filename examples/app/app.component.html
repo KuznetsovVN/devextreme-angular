@@ -22,17 +22,15 @@
             <label for="email">Email</label>
             <dx-text-box
                 formControlName="emailControl"
-                [(ngModel)]="formData.email"
-                [isValid]="!emailControl.invalid || emailControl.pristine"
+                [isValid]="!emailControl.invalid || !emailControlIsChanged"
                 [validationError]="{ message: 'Enter correct email' }">
             </dx-text-box>
 
             <label for="password">Password</label>
             <dx-text-box
                 formControlName="passwordControl"
-                [(ngModel)]="formData.password"
                 mode="password"
-                [isValid]="!passwordControl.invalid || passwordControl.pristine"
+                [isValid]="!passwordControl.invalid || !passwordControlIsChanged"
                 [validationError]="{ message: 'Password should be greater that six symbols' }">
             </dx-text-box>
 
@@ -47,7 +45,7 @@
         <div class="form-group">
 
             <label>Email</label>
-            <dx-text-box [(value)]="formData.email">
+            <dx-text-box [(value)]="formData.email" (onValueChanged)="updateEmailControl($event)">
                 <dx-validator>
                     <dxi-validation-rule type="required" message="Email is required."></dxi-validation-rule>
                     <dxi-validation-rule type="email" message="Email is invalid."></dxi-validation-rule>
@@ -55,7 +53,7 @@
             </dx-text-box>
 
             <label>Password</label>
-            <dx-text-box [(value)]="formData.password" mode="password">
+            <dx-text-box [(value)]="formData.password" mode="password" (onValueChanged)="updatePasswordControl($event)">
                 <dx-validator>
                     <dxi-validation-rule type="required" message="Password is required."></dxi-validation-rule>
                 </dx-validator>
@@ -278,6 +276,21 @@
         <p>Content of the Home tab</p>
     </div>
 </dx-tab-panel>
+
+<h2>DxDrawer</h2>
+
+<dx-button icon="menu" (onClick)="drawer.opened = !drawer.opened"></dx-button>
+<dx-drawer #drawer [height]="260">
+    <div *dxTemplate="let data of 'panel'">
+        <ul style="padding: 20px;">
+            <li>Home</li>
+            <li>About</li>
+        </ul>
+    </div>
+    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Animi, eveniet tempore, perspiciatis totam qui est minima dicta beatae dolores, omnis enim ut incidunt. Ut reprehenderit, tempore iusto deserunt doloremque fugit.</p>
+    <p>Sint natus quia repellendus cum neque. Velit similique dicta corrupti nesciunt quas ea quam minima, aliquid qui ratione suscipit magnam molestiae aspernatur iure, tenetur sapiente voluptates laborum quidem nisi molestias.</p>
+    <p>Id, nesciunt adipisci sint. Doloribus minima expedita, soluta. Eveniet reiciendis eius ducimus provident autem amet alias quis natus. In veritatis, repellendus laborum illo voluptates est quis consectetur consequuntur reiciendis rem!</p>
+</dx-drawer>
 
 <h2>dxChart</h2>
 

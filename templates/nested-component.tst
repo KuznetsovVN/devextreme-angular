@@ -1,3 +1,5 @@
+/* tslint:disable:max-line-length */
+
 <#? it.inputs #>/* tslint:disable:use-input-property-decorator */
 <#?#>
 import {
@@ -5,13 +7,19 @@ import {
     NgModule,
     Host,<#? it.hasTemplate #>
     ElementRef,
+    Renderer2,
+    Inject,
     AfterViewInit,<#?#>
     SkipSelf<#? it.properties #>,
-    Input<#?#><#? it.collectionNestedComponents.length #>,
+    Input<#?#><#? it.events #>,
+    Output,
+    EventEmitter<#?#><#? it.collectionNestedComponents.length #>,
     ContentChildren,
     forwardRef,
     QueryList<#?#>
 } from '@angular/core';
+
+<#? it.hasTemplate #>import { DOCUMENT } from '@angular/common';<#?#>
 
 <#? it.isDevExpressRequired #>
 import DevExpress from 'devextreme/bundles/dx.all';<#?#>
@@ -41,6 +49,12 @@ export class <#= it.className #>Component extends <#= it.baseClass #><#? it.hasT
         this._setOption('<#= prop.name #>', value);
     }
 <#~#>
+<#~ it.events :event:i #><#? event.description #>
+    /**
+     * <#= event.description #>
+     */<#?#>
+    @Output() <#= event.emit #>: <#= event.type #>;<#? i < it.events.length-1 #>
+<#?#><#~#>
     protected get _optionPath() {
         return '<#= it.optionName #>';
     }
@@ -56,9 +70,17 @@ export class <#= it.className #>Component extends <#= it.baseClass #><#? it.hasT
 <#~#>
     constructor(@SkipSelf() @Host() parentOptionHost: NestedOptionHost,
             @Host() optionHost: NestedOptionHost<#? it.hasTemplate #>,
+            private renderer: Renderer2,
+            @Inject(DOCUMENT) private document: any,
             @Host() templateHost: DxTemplateHost,
             private element: ElementRef<#?#>) {
-        super();
+        super();<#? it.events #>
+
+        this._createEventEmitters([
+            <#~ it.events :event:i #>{ emit: '<#= event.emit #>' }<#? i < it.events.length-1 #>,
+            <#?#><#~#>
+        ]);
+<#?#>
         parentOptionHost.setNestedOption(this);
         optionHost.setHost(this, this._fullOptionPath.bind(this));<#? it.hasTemplate #>
         templateHost.setHost(this);<#?#><#? it.optionName === 'dataSource' #>
@@ -74,7 +96,7 @@ export class <#= it.className #>Component extends <#= it.baseClass #><#? it.hasT
         this.template = template;
     }
     ngAfterViewInit() {
-        extractTemplate(this, this.element);
+        extractTemplate(this, this.element, this.renderer, this.document);
     }
 <#?#>
 }

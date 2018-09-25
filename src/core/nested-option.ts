@@ -1,7 +1,8 @@
-import { QueryList, ElementRef } from '@angular/core';
+import { QueryList, ElementRef, Renderer2, EventEmitter } from '@angular/core';
+import { ɵgetDOM as getDOM } from '@angular/platform-browser';
 
 import { DX_TEMPLATE_WRAPPER_CLASS } from './template';
-import { addClass, hasClass, getElement } from './utils';
+import { getElement } from './utils';
 
 import * as events from 'devextreme/events';
 
@@ -10,6 +11,7 @@ const VISIBILITY_CHANGE_SELECTOR = 'dx-visibility-change-handler';
 export interface INestedOptionContainer {
     instance: any;
     isLinked: boolean;
+    optionChangedHandlers: EventEmitter<any>;
 }
 
 export interface IOptionPathGetter { (): string; }
@@ -25,6 +27,25 @@ export abstract class BaseNestedOption implements INestedOptionContainer, IColle
 
     constructor() {
         this._collectionContainerImpl = new CollectionNestedOptionContainerImpl(this._setOption.bind(this), this._filterItems.bind(this));
+    }
+
+    protected _optionChangedHandler(e: any) {
+        let fullOptionPath = this._fullOptionPath();
+
+        if (e.fullName.indexOf(fullOptionPath) === 0) {
+            let optionName = e.fullName.slice(fullOptionPath.length);
+            let emitter = this[optionName + 'Change'];
+
+            if (emitter) {
+                emitter.next(e.value);
+            }
+        }
+    }
+
+    protected _createEventEmitters(events) {
+        events.forEach(event => {
+            this[event.emit] = new EventEmitter();
+        });
     }
 
     protected _getOption(name: string): any {
@@ -46,6 +67,7 @@ export abstract class BaseNestedOption implements INestedOptionContainer, IColle
     setHost(host: INestedOptionContainer, optionPath: IOptionPathGetter) {
         this._host = host;
         this._hostOptionPath = optionPath;
+        this.optionChangedHandlers.subscribe(this._optionChangedHandler.bind(this));
     }
 
     setChildren<T extends ICollectionNestedOption>(propertyName: string, items: QueryList<T>) {
@@ -62,6 +84,10 @@ export abstract class BaseNestedOption implements INestedOptionContainer, IColle
 
     get isLinked() {
         return !!this.instance && this._host.isLinked;
+    }
+
+    get optionChangedHandlers() {
+        return this._host && this._host.optionChangedHandlers;
     }
 }
 
@@ -120,7 +146,7 @@ export abstract class CollectionNestedOption extends BaseNestedOption implements
     }
 
     get isLinked() {
-        return this._index !== undefined && !!this.instance;
+        return this._index !== undefined && !!this.instance && this._host.isLinked;
     }
 }
 
@@ -131,7 +157,7 @@ export interface IOptionWithTemplate extends BaseNestedOption {
 let triggerShownEvent = function(element) {
     let changeHandlers = [];
 
-    if (hasClass(element, VISIBILITY_CHANGE_SELECTOR)) {
+    if (getDOM().hasClass(element, VISIBILITY_CHANGE_SELECTOR)) {
         changeHandlers.push(element);
     }
 
@@ -142,7 +168,7 @@ let triggerShownEvent = function(element) {
     }
 };
 
-export function extractTemplate(option: IOptionWithTemplate, element: ElementRef) {
+export function extractTemplate(option: IOptionWithTemplate, element: ElementRef, renderer: Renderer2, document: any) {
     if (!option.template === undefined || !element.nativeElement.hasChildNodes()) {
         return;
     }
@@ -164,13 +190,13 @@ export function extractTemplate(option: IOptionWithTemplate, element: ElementRef
         render: (renderData) => {
             let result = element.nativeElement;
 
-            addClass(result, DX_TEMPLATE_WRAPPER_CLASS);
+            renderer.addClass(result, DX_TEMPLATE_WRAPPER_CLASS);
 
             if (renderData.container) {
                 let container = getElement(renderData.container);
                 let resultInContainer = container.contains(element.nativeElement);
 
-                container.appendChild(element.nativeElement);
+                renderer.appendChild(container, element.nativeElement);
 
                 if (!resultInContainer) {
                     let resultInBody = document.body.contains(container);

@@ -1,3 +1,83 @@
+## 18.2.1-beta.2 (2018-08-29)
+
+### Features
+
+- Drawer Component
+- Sankey Chart Component
+
+## 18.2.1-beta.1 (2018-08-10)
+
+### Features
+
+- Update `devextreme` version to 18.2.1-pre
+
+## 18.1.5-beta.3 (2018-07-20)
+
+### Bug Fixes
+- Fix NPM package
+
+## 18.1.5-beta.2 (2018-07-19)
+
+### Bug Fixes
+- Fix the variable name [#830](https://github.com/DevExpress/devextreme-angular/pull/830)
+
+## 18.1.5-beta.1 (2018-07-02)
+
+### Bug Fixes
+- Reduce change detection call count for widgets [#817](https://github.com/DevExpress/devextreme-angular/pull/817)
+
+## 18.1.4 (2018-06-21)
+
+### Bug Fixes
+- Fix check for objects comparison [#801](https://github.com/DevExpress/devextreme-angular/pull/801)
+- Form should validate items if the ngIf directive is applied to an item [#805](https://github.com/DevExpress/devextreme-angular/pull/805)
+
+## 18.1.4-beta.2 (2018-05-31)
+
+### Bug Fixes
+- DevExtreme should subscribe on all global events within Angular Zone [#798](https://github.com/DevExpress/devextreme-angular/pull/798)
+
+## 18.1.4-beta.1 (2018-05-25)
+
+### Bug Fixes
+- Get rid of HttpClientModule from components [#794](https://github.com/DevExpress/devextreme-angular/pull/794)
+
+## 18.1.3 (2018-05-16)
+
+### Features
+- DevExtreme dependency has been updated to the 18.1.3
+- Create the DxServerTransferStateModule module to include the cache of the request result [#752](https://github.com/DevExpress/devextreme-angular/pull/752)
+- Create event emitters for nested components [#728](https://github.com/DevExpress/devextreme-angular/pull/728)
+- Support server side rendering [#732](https://github.com/DevExpress/devextreme-angular/pull/732)
+- Implement request result caching on the server, which prevents widget blinking during data loading [#721](https://github.com/DevExpress/devextreme-angular/pull/721)
+- Implement ajax on server [#705](https://github.com/DevExpress/devextreme-angular/pull/705)
+- Render dx-button widget on server [#694](https://github.com/DevExpress/devextreme-angular/pull/694)
+
+### Bug Fixes
+- Render templates within the Angular zone [#767](https://github.com/DevExpress/devextreme-angular/pull/767)
+- Event with subscriptions should be fired inside NgZoneEvent [#762](https://github.com/DevExpress/devextreme-angular/pull/762)
+- Event with subscriptions should be fired inside NgZone [#748](https://github.com/DevExpress/devextreme-angular/pull/748)
+- Fix applications based on SystemJS
+- Fix firing onValueChanged event when changing a value of dxTagBox [#710](https://github.com/DevExpress/devextreme-angular/pull/710)
+- Prevent valueChanges event when patchValue method is used with emitEvent=false [#712](https://github.com/DevExpress/devextreme-angular/pull/712)
+- DevExtreme Angular components force Angular change detection [#516](https://github.com/DevExpress/devextreme-angular/issues/516)
+- Rework the strategy of applying options[#626](https://github.com/DevExpress/devextreme-angular/pull/626)
+
+### Breaking changes
+- Angular below version 5 is not supported anymore.
+- Since the @angular/http module is deprecated (see https://github.com/angular/angular/pull/18906), DevExtreme-angular now requires adding the following modules to config.ts if you use SystemJS:
+```JavaScript
+'@angular/common/http': 'npm:@angular/common/bundles/common-http.umd.js',
+'tslib': 'npm:tslib/tslib.js',
+```
+- TypeScript declarations of nested components have become strict, which can cause a build failure. Use correct types to prevent this.
+
+## 17.2.4 (2017-12-13)
+
+### Bug Fixes
+
+[Open the list of closed bugs](https://github.com/DevExpress/devextreme-angular/milestone/29?closed=1)
+
 ## 17.2.4-beta.1 (2017-12-04)
 
 ### Bug Fixes
@@ -7,9 +87,14 @@
 
 ## <a name="17.2.3"></a>17.2.3 (2017-11-16)
 
-### Bug Fixes
+### Features
 
-[Open the list of closed bugs](https://github.com/DevExpress/devextreme-angular/milestone/26?closed=1)
+- Update `typescript` version to 2.4.2
+
+### Breaking changes
+- TypeScript declarations have become strict, which can cause a build failure. Use correct types to prevent this.
+- The jQuery dependency has been removed ([#46](https://github.com/DevExpress/devextreme-angular/issues/46)). To use jQuery, you need to manually install the jquery npm package and include the jQuery integration module in your application. For more information, please see: [Include jQuery integration](https://github.com/DevExpress/devextreme-angular#include-jquery-integration)
+
 
 ### Deprecations
 - The `dxo-data-source` nested component is deprecated. Use the `dataSource` option instead.
@@ -35,16 +120,6 @@ Currently, this will be used like simple property:
 ### Features
 
 - DevExtreme dependency has been updated to the 17.2.2-pre-beta
-
-## 17.2.1-beta.4 (2017-10-31)
-
-### Breaking changes
-- TypeScript declarations have become strict, which can cause a build failure. Use correct types to prevent this.
-
-## 17.2.1-beta.3 (2017-10-25)
-
-### Breaking changes
-- The jQuery dependency has been removed ([#46](https://github.com/DevExpress/devextreme-angular/issues/46)). You can include jQuery integration into your application to use jQuery. For more information, please see: [Include jQuery integration](https://github.com/DevExpress/devextreme-angular#include-jquery-integration)
 
 ## 17.2.1-beta.2 (2017-10-10)
 
